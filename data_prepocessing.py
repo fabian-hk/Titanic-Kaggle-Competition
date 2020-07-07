@@ -1,5 +1,6 @@
 from typing import List
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 
@@ -11,6 +12,7 @@ class DataPreprocessing:
         # data preprocessing
         self.raw_data["Sex"].loc[self.raw_data["Sex"] == "male"] = 0
         self.raw_data["Sex"].loc[self.raw_data["Sex"] == "female"] = 1
+        self.raw_data["Sex"] = self.raw_data["Sex"].astype(dtype=np.float, copy=False)
 
         self._mean_age = self.raw_data["Age"].mean()
         self.raw_data["Age"].fillna(self._mean_age, inplace=True)
