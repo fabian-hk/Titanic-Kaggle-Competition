@@ -1,7 +1,28 @@
 from typing import List, Tuple
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
+
+Title_Dictionary = {
+    "Capt": "Officer",
+    "Col": "Officer",
+    "Major": "Officer",
+    "Jonkheer": "Royalty",
+    "Don": "Royalty",
+    "Sir": "Royalty",
+    "Dr": "Officer",
+    "Rev": "Officer",
+    "the Countess": "Royalty",
+    "Mme": "Mrs",
+    "Mlle": "Miss",
+    "Ms": "Mrs",
+    "Mr": "Mr",
+    "Mrs": "Mrs",
+    "Miss": "Miss",
+    "Master": "Master",
+    "Lady": "Royalty",
+    "Dona": "Royalty",
+}
 
 
 class DataPreprocessing:
@@ -10,17 +31,38 @@ class DataPreprocessing:
         self.raw_data = pd.read_csv("data/train.csv")
 
         # data preprocessing
-        self.raw_data = self.raw_data.loc[
-            (self.raw_data["Age"] > 0.0) & (self.raw_data["Age"] <= 70.0)
-            ]
 
-        self.raw_data["Sex"].loc[self.raw_data["Sex"] == "male"] = 0
-        self.raw_data["Sex"].loc[self.raw_data["Sex"] == "female"] = 1
-        self.raw_data["Sex"] = self.raw_data["Sex"].astype(dtype=np.float, copy=False)
+        # self.raw_data = self.raw_data.loc[
+        #    (self.raw_data["Age"] > 0.0) & (self.raw_data["Age"] <= 70.0)
+        #    ]
 
         self._mean_age = self.raw_data["Age"].mean()
-        self.raw_data["Age"].fillna(self._mean_age, inplace=True)
-        print(self.raw_data.isna().any())
+        self._mean_fare = self.raw_data["Fare"].mean()
+
+        self.leS = preprocessing.LabelEncoder()
+        self.leT = preprocessing.LabelEncoder()
+
+        self.raw_data = self.data_preprocessing(
+            self.raw_data, self.leS.fit_transform, self.leT.fit_transform
+        )
+
+    def data_preprocessing(self, data: pd.DataFrame, leS, leT) -> pd.DataFrame:
+        data["Sex"] = leS(data["Sex"])
+
+        # create a new feature from the title name
+        data["Title"] = data["Name"].apply(self._process_title)
+
+        data["Title"] = leT(data["Title"])
+
+        # create a new feature from the number of siblings and parents aboard the Titanic
+        data["Family_Size"] = data["SibSp"] + data["Parch"] + 1
+
+        # fill missing age values with the mean value of all ages
+        data["Age"].fillna(self._mean_age, inplace=True)
+
+        # the test data set has one NaN value in the Fare feature
+        data["Fare"].fillna(self._mean_fare, inplace=True)
+        return data
 
     def get_data(
             self, features: List[str]
@@ -41,8 +83,12 @@ class DataPreprocessing:
         # load test data
         test_data_raw = pd.read_csv("data/test.csv")
 
-        # test data preprocessing
-        test_data_raw["Sex"].loc[test_data_raw["Sex"] == "male"] = 0
-        test_data_raw["Sex"].loc[test_data_raw["Sex"] == "female"] = 1
+        test_data = self.data_preprocessing(
+            test_data_raw, self.leS.transform, self.leT.transform
+        )
+        return test_data
 
-        return test_data_raw.fillna(self._mean_age)
+    def _process_title(self, name: str) -> str:
+        n = name.split(",")
+        n = n[1].split(".")
+        return Title_Dictionary[n[0].strip()]

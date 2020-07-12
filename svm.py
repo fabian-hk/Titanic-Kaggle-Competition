@@ -7,7 +7,7 @@ import numpy as np
 from data_prepocessing import DataPreprocessing
 from submission import make_submission
 
-features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare"]
+features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Title", "Family_Size"]
 
 data_class = DataPreprocessing()
 
@@ -19,17 +19,6 @@ clf = make_pipeline(StandardScaler(), SVC(gamma="auto"))
 score = cross_val_score(clf, x, y, cv=5)
 print(f"Score: {score}, Mean: {np.mean(score)}")
 
-x_train, x_test, y_train, y_test = data_class.get_data(features)
-clf.fit(x_train, y_train)
-
-# test the model and compute the accuracy
-y_ = clf.predict(x_test)
-
-acc = 0.0
-for i, yy in enumerate(y_test):
-    if yy == y_[i]:
-        acc += 1
-
-print(f"Accuracy: {acc / float(len(y_))}")
+clf.fit(x, y)
 
 make_submission(data_class, clf.predict, features)
