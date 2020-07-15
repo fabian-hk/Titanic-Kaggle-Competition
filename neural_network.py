@@ -1,5 +1,8 @@
 from torch import nn
 import torch
+from sklearn.model_selection import StratifiedKFold
+import numpy as np
+import pandas as pd
 
 from data_prepocessing import DataPreprocessing
 
@@ -7,64 +10,71 @@ from data_prepocessing import DataPreprocessing
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
-        self.fc1 = nn.Linear(6, 10)
+        self.fc1 = nn.Linear(6, 16)
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(10, 1)
-        self.sigmoid = nn.Sigmoid()
+        self.fc2 = nn.Linear(16, 2)
+        self.softmax = nn.Softmax()
 
-        self.criterion = torch.nn.BCELoss()
-        self.optimizer = torch.optim.SGD(self.parameters(), lr=0.01)
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         output = self.fc1(x)
         output = self.relu(output)
         output = self.fc2(output)
-        return self.sigmoid(output)
+        return self.softmax(output)
 
-    def fit(self, x, y, **kwargs):
+    def fit(self, x: pd.DataFrame, y: pd.DataFrame, **kwargs):
         self.train()
 
         x_tensor = torch.tensor(x.values, dtype=torch.float32)
-        y_tensor = torch.tensor(y.values, dtype=torch.float32)
-        # y_tensor = nn.functional.one_hot(y_tensor)
+        y_tensor = torch.tensor(y.values, dtype=torch.int64)
 
         epochs = 5
         for epoch in range(epochs):
             self.optimizer.zero_grad()
             y_ = self(x_tensor)
-            y_ = y_.squeeze()
             loss = self.criterion(y_, y_tensor)
             print(f"Epoch: {epoch}, Train loss: {loss}")
 
             loss.backward()
             self.optimizer.step()
 
-    def predict(self, x):
+    def predict(self, x: pd.DataFrame) -> torch.Tensor:
         self.eval()
         x_tensor = torch.tensor(x.values, dtype=torch.float32)
         y_ = self(x_tensor)
-        return torch.round(y_)
+        return torch.argmax(y_, dim=1)
 
+    def evaluate(self, x: pd.DataFrame, y: pd.DataFrame) -> float:
+        y_ = self.predict(x)
 
-def scorer(estimator, x, y) -> float:
-    return 0.93
+        acc = 0.0
+        for y_y, yy in zip(y_, y):
+            if y_y == yy:
+                acc += 1
+
+        acc = float(acc) / float(len(y))
+        print(f"Accuracy: {acc}")
+        return acc
 
 
 features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare"]
 
 data_class = DataPreprocessing()
 
-x_train, x_test, y_train, y_test = data_class.get_data(features)
+x, y = data_class.get_raw_data(features, scale=True)
 
-network = NeuralNetwork()
+kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=16)
+score = []
+for train_index, test_index in kf.split(x, y):
+    x_train, x_test = x.loc[train_index], x.loc[test_index]
+    y_train, y_test = y.loc[train_index], y.loc[test_index]
 
-network.fit(x_train, y_train)
+    network = NeuralNetwork()
+    network.fit(x_train, y_train)
+    acc = network.evaluate(x_test, y_test)
 
-y_ = network.predict(x_test)
+    score.append(acc)
 
-acc = 0.0
-for y_y, yy in zip(y_, y_test):
-    if y_y == yy:
-        acc += 1
-
-print(f"Accuracy: {float(acc) / float(len(y_test))}")
+print(f"Score: {score}, Mean: {np.mean(score)}")

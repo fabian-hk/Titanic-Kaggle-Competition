@@ -42,6 +42,8 @@ class DataPreprocessing:
         self.leS = preprocessing.LabelEncoder()
         self.leT = preprocessing.LabelEncoder()
 
+        self.scaler = preprocessing.StandardScaler()
+
         self.raw_data = self.data_preprocessing(
             self.raw_data, self.leS.fit_transform, self.leT.fit_transform
         )
@@ -73,19 +75,27 @@ class DataPreprocessing:
 
         return train_test_split(data, label, test_size=0.2)
 
-    def get_raw_data(self, features: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def get_raw_data(
+            self, features: List[str], scale: bool = False
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         data = self.raw_data[features]
+        if scale:
+            data = pd.DataFrame(self.scaler.fit_transform(data))
+
         label = self.raw_data["Survived"]
 
         return data, label
 
-    def load_test_data(self) -> pd.DataFrame:
+    def load_test_data(self, scale: bool = False) -> pd.DataFrame:
         # load test data
         test_data_raw = pd.read_csv("data/test.csv")
 
         test_data = self.data_preprocessing(
             test_data_raw, self.leS.transform, self.leT.transform
         )
+
+        if scale:
+            test_data = pd.DataFrame(self.scaler.transform(test_data))
         return test_data
 
     def _process_title(self, name: str) -> str:
