@@ -1,6 +1,7 @@
 from torch import nn
 import torch
 from sklearn.model_selection import StratifiedKFold
+from sklearn import utils
 import numpy as np
 import pandas as pd
 
@@ -13,7 +14,7 @@ class NeuralNetwork(nn.Module):
         self.fc1 = nn.Linear(6, 16)
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(16, 2)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
 
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
@@ -32,6 +33,8 @@ class NeuralNetwork(nn.Module):
 
         epochs = 5
         for epoch in range(epochs):
+            x_tensor, y_tensor = utils.shuffle(x_tensor, y_tensor, random_state=epochs)
+
             self.optimizer.zero_grad()
             y_ = self(x_tensor)
             loss = self.criterion(y_, y_tensor)
@@ -47,6 +50,8 @@ class NeuralNetwork(nn.Module):
         return torch.argmax(y_, dim=1)
 
     def evaluate(self, x: pd.DataFrame, y: pd.DataFrame) -> float:
+        x, y = utils.shuffle(x, y, random_state=10)
+
         y_ = self.predict(x)
 
         acc = 0.0
@@ -70,6 +75,8 @@ score = []
 for train_index, test_index in kf.split(x, y):
     x_train, x_test = x.loc[train_index], x.loc[test_index]
     y_train, y_test = y.loc[train_index], y.loc[test_index]
+
+    torch.manual_seed(10)
 
     network = NeuralNetwork()
     network.fit(x_train, y_train)
