@@ -7,7 +7,7 @@ import numpy as np
 from data_prepocessing import DataPreprocessing
 from submission import make_submission
 
-features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Title", "Family_Size"]
+features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare"]
 
 data_class = DataPreprocessing()
 

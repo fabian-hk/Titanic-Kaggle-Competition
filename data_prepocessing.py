@@ -48,6 +48,8 @@ class DataPreprocessing:
             self.raw_data, self.leS.fit_transform, self.leT.fit_transform
         )
 
+        self.test_data_raw = None
+
     def data_preprocessing(self, data: pd.DataFrame, leS, leT) -> pd.DataFrame:
         data["Sex"] = leS(data["Sex"])
 
@@ -86,13 +88,15 @@ class DataPreprocessing:
 
         return data, label
 
-    def load_test_data(self, scale: bool = False) -> pd.DataFrame:
+    def load_test_data(self, features: List[str], scale: bool = False) -> pd.DataFrame:
         # load test data
-        test_data_raw = pd.read_csv("data/test.csv")
+        self.test_data_raw = pd.read_csv("data/test.csv")
 
         test_data = self.data_preprocessing(
-            test_data_raw, self.leS.transform, self.leT.transform
+            self.test_data_raw, self.leS.transform, self.leT.transform
         )
+
+        test_data = test_data[features]
 
         if scale:
             test_data = pd.DataFrame(self.scaler.transform(test_data))

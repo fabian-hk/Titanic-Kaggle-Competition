@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from data_prepocessing import DataPreprocessing
+from submission import make_submission
 
 
 class NeuralNetwork(nn.Module):
@@ -31,7 +32,7 @@ class NeuralNetwork(nn.Module):
         x_tensor = torch.tensor(x.values, dtype=torch.float32)
         y_tensor = torch.tensor(y.values, dtype=torch.int64)
 
-        epochs = 5
+        epochs = 6
         for epoch in range(epochs):
             x_tensor, y_tensor = utils.shuffle(x_tensor, y_tensor, random_state=epochs)
 
@@ -85,3 +86,11 @@ for train_index, test_index in kf.split(x, y):
     score.append(acc)
 
 print(f"Score: {score}, Mean: {np.mean(score)}")
+
+torch.manual_seed(10)
+
+network = NeuralNetwork()
+
+network.fit(x, y)
+
+make_submission(data_class, network.predict, features, scale=True)
