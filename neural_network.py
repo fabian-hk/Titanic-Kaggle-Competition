@@ -71,6 +71,7 @@ data_class = DataPreprocessing()
 
 x, y = data_class.get_raw_data(features, scale=True)
 
+# do cross validation
 kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=16)
 score = []
 for train_index, test_index in kf.split(x, y):
@@ -87,10 +88,11 @@ for train_index, test_index in kf.split(x, y):
 
 print(f"Score: {score}, Mean: {np.mean(score)}")
 
+# train network on the entire data set before submission
 torch.manual_seed(10)
 
 network = NeuralNetwork()
-
 network.fit(x, y)
 
+# make the prediction on the test data set for submission
 make_submission(data_class, network.predict, features, scale=True)

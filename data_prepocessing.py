@@ -30,8 +30,6 @@ class DataPreprocessing:
         # load trainings data
         self.raw_data = pd.read_csv("data/train.csv")
 
-        # data preprocessing
-
         # self.raw_data = self.raw_data.loc[
         #    (self.raw_data["Age"] > 0.0) & (self.raw_data["Age"] <= 70.0)
         #    ]
@@ -55,7 +53,6 @@ class DataPreprocessing:
 
         # create a new feature from the title name
         data["Title"] = data["Name"].apply(self._process_title)
-
         data["Title"] = leT(data["Title"])
 
         # create a new feature from the number of siblings and parents aboard the Titanic
@@ -69,7 +66,7 @@ class DataPreprocessing:
         return data
 
     def get_data(
-            self, features: List[str]
+        self, features: List[str]
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         data = self.raw_data[features]
 
@@ -78,7 +75,7 @@ class DataPreprocessing:
         return train_test_split(data, label, test_size=0.2)
 
     def get_raw_data(
-            self, features: List[str], scale: bool = False
+        self, features: List[str], scale: bool = False
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         data = self.raw_data[features]
         if scale:

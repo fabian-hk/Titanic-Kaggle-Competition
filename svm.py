@@ -16,6 +16,7 @@ x, y = data_class.get_raw_data(features)
 # train model
 clf = make_pipeline(StandardScaler(), SVC(gamma="auto"))
 
+# do cross validation
 score = cross_val_score(clf, x, y, cv=5)
 print(f"Score: {score}, Mean: {np.mean(score)}")
 
